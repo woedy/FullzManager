@@ -30,6 +30,7 @@ services:
       - DB_PORT=5432
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,backend}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost}
+      - DATABASE=postgres
     depends_on:
       - db
     expose:
