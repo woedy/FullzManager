@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME:-fullz_db}
+      - POSTGRES_USER=${DB_USER:-fullz_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-fullz_pass}
+    restart: always
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./data:/app/data
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=0
+      - DB_NAME=${DB_NAME:-fullz_db}
+      - DB_USER=${DB_USER:-fullz_user}
+      - DB_PASSWORD=${DB_PASSWORD:-fullz_pass}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,backend}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost}
+    depends_on:
+      - db
+    expose:
+      - "8000"
+    restart: always
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    expose:
+      - "80"
+    environment:
+      # This is burnt into the build time for Vite usually?
+      # For runtime env var in Nginx, we need a script or just accept build arg.
+      # Vite uses build time envs.
+      # So we need to pass VITE_API_URL as build arg or env during build.
+      - VITE_API_URL=${VITE_API_URL:-/api} 
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

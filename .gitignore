@@ -1,0 +1,66 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.env
+.venv
+*.log
+*.sqlite3
+db.sqlite3
+
+# Django Media & Statics
+backend/media/
+backend/staticfiles/
+backend/static/
+media/
+staticfiles/
+static/
+
+# Data Directories
+data/
+backend/data/
+Raw/
+backend/exports/
+backend/evidence/
+
+# Debug and Temp Scripts
+debug_import.py
+backend/debug_import.py
+*.bak
+*.tmp
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.npm/
+.yarn/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# OS Files
+thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+Icon?
+
+# Docker
+.docker/
+
+# Coverage
+coverage/
+.coverage
+htmlcov/
