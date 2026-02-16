@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import { Lock, User, AlertCircle } from 'lucide-react';
 
 const Login = () => {
@@ -16,19 +16,8 @@ const Login = () => {
         setError('');
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '';
-            let authUrl;
-
-            if (API_URL) {
-                // Ensure the URL has a protocol
-                const base = API_URL.includes('://') ? API_URL : `http://${API_URL}`;
-                // Join paths properly without breaking the protocol slashes
-                authUrl = new URL('api-token-auth/', base.endsWith('/') ? base : `${base}/`).toString();
-            } else {
-                authUrl = '/api-token-auth/';
-            }
-
-            const response = await axios.post(authUrl, {
+            console.log('Sending login request to:', api.defaults.baseURL + '/api-token-auth/');
+            const response = await api.post('/api-token-auth/', {
                 username,
                 password
             });
