@@ -31,14 +31,18 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - CORS_ALLOW_ALL_ORIGINS=True
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       - VITE_API_URL=http://localhost:8000
     depends_on:

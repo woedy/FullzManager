@@ -3,6 +3,17 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, UserPlus, CreditCard, Info, Settings as SettingsIcon, Clock, CheckCircle2, Upload } from 'lucide-react';
 
 const Layout = ({ children }) => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        return <>{children}</>;
+    }
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+    };
+
     return (
         <div className="flex h-screen bg-slate-950 text-slate-200 font-sans">
             {/* Sidebar */}
@@ -36,6 +47,7 @@ const Layout = ({ children }) => {
                         <span className="font-medium">Credit Cards</span>
                     </NavLink>
                     <NavLink to="/info-store" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20' : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}>
+                        <Info size={20} />
                         <span className="font-medium">Info Store</span>
                     </NavLink>
                     <NavLink to="/import" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20' : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}>
@@ -47,6 +59,15 @@ const Layout = ({ children }) => {
                         <span className="font-medium">Settings</span>
                     </NavLink>
                 </nav>
+
+                <div className="p-4 border-t border-slate-800">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-all font-medium"
+                    >
+                        Logout
+                    </button>
+                </div>
 
                 <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
                     &copy; 2025 Fullz System

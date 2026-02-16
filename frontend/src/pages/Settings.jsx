@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Trash2 } from 'lucide-react';
+import api from '../services/api';
 
 const Settings = () => {
     const [showConfirm, setShowConfirm] = useState(false);
@@ -10,20 +11,16 @@ const Settings = () => {
         setIsLoading(true);
         setMessage(null);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/people/clear_all/`, {
-                method: 'DELETE',
-            });
+            const response = await api.delete('/people/clear_all/');
 
-            if (response.ok) {
-                const data = await response.json();
+            if (response.status === 200) {
+                const data = response.data;
                 setMessage({ type: 'success', text: data.message || 'Data cleared successfully.' });
                 setShowConfirm(false);
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to clear data');
             }
         } catch (error) {
-            setMessage({ type: 'error', text: error.message });
+            const errorMsg = error.response?.data?.error || error.message || 'Failed to clear data';
+            setMessage({ type: 'error', text: errorMsg });
         } finally {
             setIsLoading(false);
         }
