@@ -10,13 +10,34 @@ from .services.import_service import DataImportService
 from django.db import transaction
 
 class PersonViewSet(viewsets.ModelViewSet):
-    queryset = Person.objects.all().order_by('first_name').distinct()
+    queryset = Person.objects.all()
     serializer_class = PersonSerializer
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PersonFilter
     search_fields = ['first_name', 'last_name', 'ssn', 'ein', 'addresses__city', 'addresses__state', 'aliases__name']
+
+    def get_queryset(self):
+        """
+        Override to support random ordering via query parameter.
+        Use ?ordering=random for random order, otherwise defaults to random.
+        """
+        queryset = super().get_queryset()
+        ordering = self.request.query_params.get('ordering', 'random')
+        
+        if ordering == 'random':
+            # Use database-level random ordering
+            queryset = queryset.order_by('?')
+        elif ordering == 'name':
+            queryset = queryset.order_by('first_name', 'last_name')
+        elif ordering == 'date':
+            queryset = queryset.order_by('-created_at')
+        else:
+            # Default to random
+            queryset = queryset.order_by('?')
+        
+        return queryset.distinct()
 
     @action(detail=True, methods=['post'])
     def toggle_used(self, request, pk=None):

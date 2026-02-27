@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { calculateAge } from '../utils/date';
 import { Link } from 'react-router-dom';
-import { Search, User, MapPin, Phone, Edit, Trash2, Eye, Play } from 'lucide-react';
+import { Search, User, MapPin, Phone, Edit, Trash2, Eye, Play, Shuffle } from 'lucide-react';
 import { getPeople, deletePerson, initiatePerson } from '../services/people';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
@@ -135,15 +135,26 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [shuffling, setShuffling] = useState(false);
 
-    const fetchPeople = async (searchTerm = '', pageNum = 1) => {
+    const fetchPeople = async (searchTerm = '', pageNum = 1, forceRandom = false) => {
         setLoading(true);
         try {
-            const params = { search: searchTerm, page: pageNum, status: 'available' };
+            const params = { 
+                search: searchTerm, 
+                page: pageNum, 
+                status: 'available',
+                ordering: 'random' // Always use random ordering
+            };
             if (sexFilter) params.sex = sexFilter;
-            if (stateFilter) params.addresses__state = stateFilter;
+            if (stateFilter) params.state = stateFilter;
             if (ageRange[0] > 0) params.min_age = ageRange[0];
             if (ageRange[1] < 100) params.max_age = ageRange[1];
+
+            // Add timestamp to force new random order on shuffle
+            if (forceRandom) {
+                params._shuffle = Date.now();
+            }
 
             const data = await getPeople(params);
             if (data.results) {
@@ -158,6 +169,29 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Client-side shuffle function
+    const shuffleArray = (array) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    const handleShuffle = async () => {
+        setShuffling(true);
+        
+        // First, do client-side shuffle for immediate feedback
+        setPeople(prevPeople => shuffleArray(prevPeople));
+        
+        // Then fetch new random data from server
+        setTimeout(async () => {
+            await fetchPeople(search, page, true);
+            setShuffling(false);
+        }, 300);
     };
 
     useEffect(() => {
@@ -196,9 +230,23 @@ const Dashboard = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold text-white">People Directory</h2>
-                <Link to="/add" className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                    Add New Person
-                </Link>
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleShuffle}
+                        disabled={shuffling || loading}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                            shuffling || loading
+                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                : 'bg-purple-600 hover:bg-purple-500 text-white hover:scale-105'
+                        }`}
+                    >
+                        <Shuffle size={18} className={shuffling ? 'animate-spin' : ''} />
+                        {shuffling ? 'Shuffling...' : 'Shuffle'}
+                    </button>
+                    <Link to="/add" className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        Add New Person
+                    </Link>
+                </div>
             </div>
 
             {/* Search & Filter Bar */}
@@ -219,7 +267,7 @@ const Dashboard = () => {
                     </button>
                 </form>
 
-                <div className="flex flex-wrap gap-4 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <select
                         value={sexFilter}
                         onChange={(e) => setSexFilter(e.target.value)}
@@ -234,7 +282,7 @@ const Dashboard = () => {
                     <select
                         value={stateFilter}
                         onChange={(e) => setStateFilter(e.target.value)}
-                        className="bg-slate-800 border border-slate-700 text-slate-300 py-2 px-3 rounded-lg focus:outline-none focus:border-blue-500 w-48"
+                        className="bg-slate-800 border border-slate-700 text-slate-300 py-2 px-3 rounded-lg focus:outline-none focus:border-blue-500"
                     >
                         <option value="">All States</option>
                         <option value="AL">Alabama</option>
@@ -289,8 +337,8 @@ const Dashboard = () => {
                         <option value="WY">Wyoming</option>
                     </select>
 
-                    <div className="w-64 px-2">
-                        <label className="text-xs text-slate-400 block mb-1 font-medium">Age Range: {ageRange[0]} - {ageRange[1]}</label>
+                    <div className="col-span-1 md:col-span-2 px-2">
+                        <label className="text-xs text-slate-400 block mb-2 font-medium">Age Range: {ageRange[0]} - {ageRange[1]} years</label>
                         <Slider
                             range
                             min={0}
@@ -305,8 +353,13 @@ const Dashboard = () => {
                             railStyle={{ backgroundColor: '#334155' }}
                         />
                     </div>
+                </div>
 
-                    {(sexFilter || stateFilter || search || ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                {(sexFilter || stateFilter || search || ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                        <span className="text-sm text-slate-400">
+                            {totalCount} result{totalCount !== 1 ? 's' : ''} found
+                        </span>
                         <button
                             onClick={() => {
                                 setSearch('');
@@ -314,15 +367,13 @@ const Dashboard = () => {
                                 setStateFilter('');
                                 setAgeRange([0, 100]);
                                 setPage(1);
-                                // fetchPeople() triggered by effects logic refactor or manual call if needed, 
-                                // but setState is async. Effect handles it.
                             }}
-                            className="text-slate-500 hover:text-white text-sm underline"
+                            className="text-slate-400 hover:text-white text-sm underline transition-colors"
                         >
-                            Clear Filters
+                            Clear All Filters
                         </button>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* List */}

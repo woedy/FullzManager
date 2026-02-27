@@ -1,7 +1,12 @@
 import api from './api';
 
 export const getPeople = async (params) => {
-    const response = await api.get('/people/', { params });
+    // Add random ordering by default if not specified
+    const finalParams = {
+        ordering: 'random',
+        ...params
+    };
+    const response = await api.get('/people/', { params: finalParams });
     return response.data;
 };
 
